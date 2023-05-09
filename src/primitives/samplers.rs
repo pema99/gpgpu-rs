@@ -28,11 +28,7 @@ impl<'fw> Sampler<'fw> {
             mag_filter: wgpu_filter_mode,
             min_filter: wgpu_filter_mode,
             mipmap_filter: wgpu_filter_mode,
-            lod_min_clamp: 0.0,
-            lod_max_clamp: std::f32::MAX,
-            compare: None,
-            anisotropy_clamp: None,
-            border_color: None,
+            ..Default::default()
         });
         Self {
             fw,

@@ -72,6 +72,7 @@ where
             sample_count: 1,
             format,
             usage: GPU_IMAGE_USAGES,
+            view_formats: &[format]
         });
 
         let full_view = texture.create_view(&wgpu::TextureViewDescriptor::default());
@@ -104,6 +105,7 @@ where
                 sample_count: 1,
                 format,
                 usage: GPU_IMAGE_USAGES,
+                view_formats: &[format]
             },
             data,
         );
@@ -155,8 +157,6 @@ where
 {
     /// Pulls some elements from the [`GpuImage`] into `buf`, returning how many pixels were read.
     pub async fn read(&self, buf: &mut [u8]) -> Result<usize, ImageOutputError> {
-        use std::num::NonZeroU32;
-
         let (width, height) = self.dimensions();
 
         let img_bytes = (width * height) as usize * P::byte_size();
@@ -201,7 +201,7 @@ where
             buffer: &staging,
             layout: wgpu::ImageDataLayout {
                 offset: 0,
-                bytes_per_row: NonZeroU32::new(padded_bytes_per_row),
+                bytes_per_row: Some(padded_bytes_per_row),
                 rows_per_image: None,
             },
         };
@@ -216,7 +216,7 @@ where
             &self.fw.queue,
             &staging.slice(..),
             move |result| {
-                tx.send(result)
+                tx.send(result.map(|b| b.to_owned()))
                     .unwrap_or_else(|_| panic!("Failed to download buffer."));
             },
         );
@@ -260,8 +260,6 @@ where
     /// This function will attempt to write the entire contents of `buf`, unless its capacity
     /// exceeds the one of the image, in which case the first `width * height` pixels are written.
     pub fn write(&self, buf: &[u8]) -> Result<usize, ImageInputError> {
-        use std::num::NonZeroU32;
-
         if buf.len() % P::byte_size() != 0 {
             return Err(ImageInputError::NotIntegerPixelNumber);
         }
@@ -290,8 +288,7 @@ where
             wgpu::ImageDataLayout {
                 offset: 0,
                 bytes_per_row: Some(
-                    NonZeroU32::new(P::byte_size() as u32 * self.size.width)
-                        .expect("Could not create a NonZeroU32."),
+                    P::byte_size() as u32 * self.size.width,
                 ),
                 rows_per_image: None,
             },
@@ -348,6 +345,7 @@ where
             sample_count: 1,
             format,
             usage: GPU_CONST_IMAGE_USAGES,
+            view_formats: &[format]
         });
 
         let full_view = texture.create_view(&wgpu::TextureViewDescriptor::default());
@@ -380,6 +378,7 @@ where
                 sample_count: 1,
                 format,
                 usage: GPU_CONST_IMAGE_USAGES,
+                view_formats: &[format]
             },
             data,
         );
@@ -433,8 +432,6 @@ where
     /// This function will attempt to write the entire contents of `buf`, unless its capacity
     /// exceeds the one of the image, in which case the first `width * height` pixels are written.
     pub fn write(&self, buf: &[u8]) -> Result<usize, ImageInputError> {
-        use std::num::NonZeroU32;
-
         if buf.len() % P::byte_size() != 0 {
             return Err(ImageInputError::NotIntegerPixelNumber);
         }
@@ -463,8 +460,7 @@ where
             wgpu::ImageDataLayout {
                 offset: 0,
                 bytes_per_row: Some(
-                    NonZeroU32::new(P::byte_size() as u32 * self.size.width)
-                        .expect("Could not create a NonZeroU32."),
+                    P::byte_size() as u32 * self.size.width,
                 ),
                 rows_per_image: None,
             },

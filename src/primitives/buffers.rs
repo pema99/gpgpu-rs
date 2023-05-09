@@ -106,7 +106,7 @@ where
             &self.fw.queue,
             &self.buf.slice(..download_size as u64),
             move |result| {
-                tx.send(result)
+                tx.send(result.map(|b| b.to_owned()))
                     .unwrap_or_else(|_| panic!("Failed to download buffer."));
             },
         );
