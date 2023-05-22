@@ -110,6 +110,7 @@ where
                     .unwrap_or_else(|_| panic!("Failed to download buffer."));
             },
         );
+        self.fw.device.poll(wgpu::Maintain::Wait);
         let download = rx.await.unwrap().unwrap();
 
         buf.copy_from_slice(bytemuck::cast_slice(&download));
@@ -158,7 +159,8 @@ where
             .create_command_encoder(&wgpu::CommandEncoderDescriptor {
                 label: Some("GpuBuffer::write"),
             });
-        self.fw.queue.submit(Some(encoder.finish()));
+        let index = self.fw.queue.submit(Some(encoder.finish()));
+        self.fw.device.poll(wgpu::Maintain::WaitForSubmissionIndex(index));
 
         Ok(upload_size)
     }
@@ -252,7 +254,8 @@ where
             .create_command_encoder(&wgpu::CommandEncoderDescriptor {
                 label: Some("GpuUniformBuffer::write"),
             });
-        self.fw.queue.submit(Some(encoder.finish()));
+        let index = self.fw.queue.submit(Some(encoder.finish()));
+        self.fw.device.poll(wgpu::Maintain::WaitForSubmissionIndex(index));
 
         Ok(upload_size)
     }

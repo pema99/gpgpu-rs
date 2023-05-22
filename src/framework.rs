@@ -24,7 +24,7 @@ impl Default for Framework {
                 .await
                 .expect("Failed at adapter creation.");
 
-            Self::new(adapter, Duration::from_millis(10)).await
+            Self::new(adapter).await
         })
     }
 }
@@ -33,7 +33,7 @@ impl Framework {
     /// Creates a new [`Framework`] instance from a [`wgpu::Adapter`] and a `polling_time`.
     ///
     /// Use this method when there are multiple GPUs in use or when a [`wgpu::Surface`] is required.
-    pub async fn new(adapter: wgpu::Adapter, polling_time: Duration) -> Self {
+    pub async fn new(adapter: wgpu::Adapter) -> Self {
         let (device, queue) = adapter
             .request_device(
                 &wgpu::DeviceDescriptor {
@@ -55,12 +55,6 @@ impl Framework {
         );
 
         let device = Arc::new(device);
-        let polling_device = Arc::clone(&device);
-
-        std::thread::spawn(move || loop {
-            polling_device.poll(wgpu::Maintain::Poll);
-            std::thread::sleep(polling_time);
-        });
 
         Self {
             device,

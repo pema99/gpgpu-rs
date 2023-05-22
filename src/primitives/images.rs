@@ -208,7 +208,8 @@ where
 
         encoder.copy_texture_to_buffer(copy_texture, copy_buffer, self.size);
 
-        self.fw.queue.submit(Some(encoder.finish()));
+        let index = self.fw.queue.submit(Some(encoder.finish()));
+        self.fw.device.poll(wgpu::Maintain::WaitForSubmissionIndex(index));
 
         let (tx, rx) = futures::channel::oneshot::channel();
         wgpu::util::DownloadBuffer::read_buffer(
@@ -220,6 +221,7 @@ where
                     .unwrap_or_else(|_| panic!("Failed to download buffer."));
             },
         );
+        self.fw.device.poll(wgpu::Maintain::Wait);
         let download = rx.await.unwrap().unwrap();
 
         let bytes_read: usize = download
@@ -305,7 +307,8 @@ where
                 label: Some("GpuImage::write"),
             });
 
-        self.fw.queue.submit(Some(encoder.finish()));
+        let index = self.fw.queue.submit(Some(encoder.finish()));
+        self.fw.device.poll(wgpu::Maintain::WaitForSubmissionIndex(index));
 
         Ok((size.width * size.height) as usize)
     }
@@ -478,7 +481,8 @@ where
                 label: Some("GpuConstImage::write"),
             });
 
-        self.fw.queue.submit(Some(encoder.finish()));
+        let index = self.fw.queue.submit(Some(encoder.finish()));
+        self.fw.device.poll(wgpu::Maintain::WaitForSubmissionIndex(index));
 
         Ok((size.width * size.height) as usize)
     }
