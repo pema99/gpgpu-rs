@@ -332,6 +332,7 @@ impl<'fw> Kernel<'fw> {
             cpass.dispatch_workgroups(x, y, z);
         }
 
-        self.fw.queue.submit(Some(encoder.finish()));
+        let index = self.fw.queue.submit(Some(encoder.finish()));
+        self.fw.device.poll(wgpu::Maintain::WaitForSubmissionIndex(index));
     }
 }
